@@ -123,7 +123,7 @@ class Pipe:
         bottomPoint = birdMask.overlap(bottomMask, bottomOffset)
         topPoint = birdMask.overlap(topMask, topOffset)
 
-        if bottomPoint or bottomPoint:
+        if bottomPoint or topPoint:
             return True
         return False
 
@@ -154,7 +154,7 @@ class Ground:
 
 
 
-def draw_window(window, bird, pipes, ground, score):
+def draw_window(window, birds, pipes, ground, score):
     window.blit(backgroundImage, (0, 0))
 
     for pipe in pipes:
@@ -165,7 +165,9 @@ def draw_window(window, bird, pipes, ground, score):
 
     ground.draw(window)
 
-    bird.draw(window)
+    for bird in birds:
+        bird.draw(window)
+
     pygame.display.update()
 
 
@@ -174,13 +176,12 @@ def main(genomes, config):
     ge = []
     birds = []
 
-    for genome in genomes:
-        net = neat.nn.FeedForwordNetwork(genome, config)
+    for _, genome in genomes:
+        net = neat.nn.FeedForwardNetwork.create(genome, config)
         nets.append(net)
         birds.append(Bird(230, 350))
         genome.fitness = 0
         ge.append(genome)
-
 
     ground = Ground(730)
     pipes = [Pipe(600)]
@@ -195,6 +196,25 @@ def main(genomes, config):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
+                pygame.quit()
+                quit()
+
+        pipeIndex = 0
+        if len(birds) > 0:
+            if len(pipes) > 1 and birds[0].x > pipes[0].x + pipes[0].pipeTop.get_width():
+                pipeIndex = 1
+        else:
+            run = False
+            break
+
+        for x, bird in enumerate(birds):
+            bird.move()
+            ge[x].fitness += 0.1
+
+            output = nets[x].activate((bird.y, abs(bird.y - pipes[pipeIndex].height), abs(bird.y - pipes[pipeIndex].bottom)))
+
+            if output[0] > 0.5:
+                bird.jump()
 
         addPipe = False
         remove = []
@@ -202,9 +222,9 @@ def main(genomes, config):
             for x, bird in enumerate(birds):
                 if pipe.collid(bird):
                     ge[x].fitness -= 1
-                    birds.pop(x)
-                    nets.pop(x)
-                    ge.pop(x)
+                    birds.pop()
+                    nets.pop()
+                    ge.pop()
 
                 if not pipe.passed and pipe.x < bird.x:
                     pipe.passed = True
@@ -221,23 +241,17 @@ def main(genomes, config):
                 genome.fitness += 5
             pipes.append(Pipe(600))
 
-        for rem in remove:
-            pipes.remove(rem)
+        for r in remove:
+            pipes.remove(r)
 
         for x, bird in enumerate(birds):
-            if bird.y + bird.image.get_height() >= 730:
+            if bird.y + bird.image.get_height() >= 730 or bird.y < 0:
                 birds.pop(x)
                 nets.pop(x)
                 ge.pop(x)
 
         ground.move()
-        draw_window(window, bird, pipes, ground, score)
-
-    pygame.quit()
-    quit()
-
-
-main()
+        draw_window(window, birds, pipes, ground, score)
 
 
 def run(configPath):
@@ -254,6 +268,6 @@ def run(configPath):
 
 if __name__ == "__main__":
     local_dir = os.path.dirname(__file__)
-    configPath = os.path.join(local_dir, "config-feedforward.txt")
+    configPath = os.path.join(local_dir, 'config-feedforward.txt')
     run(configPath)
 
