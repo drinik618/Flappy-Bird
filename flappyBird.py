@@ -4,12 +4,12 @@ import time
 import os
 import random
 
-windowWidth = 600
+windowWidth = 500
 windowHeight = 800
 
 birdImages = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird1.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird2.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird3.png")))]
 pipeImage = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "pipe.png")))
-groundImage = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "base.pgn")))
+groundImage = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "base.png")))
 backgroundImage = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bg.png")))
 
 class Bird:
@@ -72,4 +72,34 @@ class Bird:
             self.image = self.images[1]
             self.imageCount = self.animationTime * 2
 
+        rotatedImage = pygame.transform.rotate(self.image, self.tilt)
+        newRectangle = rotatedImage.get_rect(center=self.image.get_rect(topleft = (self.x, self.y)).center)
+        win.blit(rotatedImage, newRectangle.topleft)
 
+    def get_mask(self):
+        return pygame.mask.from_surface(self.img)
+
+def draw_window(window, bird):
+    window.blit(backgroundImage, (0, 0))
+    bird.draw(window)
+    pygame.display.update()
+
+def main():
+    bird = Bird(200, 200)
+    window = pygame.display.set_mode((windowWidth, windowHeight))
+    clock = pygame.time.Clock()
+
+    run = True
+    while run:
+        clock.tick(30)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+
+        bird.move()
+        draw_window(window, bird)
+
+    pygame.quit()
+    quit()
+
+main()
