@@ -8,6 +8,8 @@ pygame.font.init()
 windowWidth = 500
 windowHeight = 800
 
+generation = 0
+
 birdImages = [pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird1.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird2.png"))), pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "bird3.png")))]
 pipeImage = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "pipe.png")))
 groundImage = pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", "base.png")))
@@ -154,7 +156,7 @@ class Ground:
 
 
 
-def draw_window(window, birds, pipes, ground, score):
+def draw_window(window, birds, pipes, ground, score, generation, numberOfBirds):
     window.blit(backgroundImage, (0, 0))
 
     for pipe in pipes:
@@ -162,6 +164,12 @@ def draw_window(window, birds, pipes, ground, score):
 
     text = statFont.render("Score: " + str(score), 1, (255, 255, 255))
     window.blit(text, (windowWidth - 10 - text.get_width(), 10))
+
+    text = statFont.render("Generation: " + str(generation), 1, (255, 255, 255))
+    window.blit(text, (10, 10))
+
+    text = statFont.render("Number of Birds: " + str(numberOfBirds), 1, (255, 255, 255))
+    window.blit(text, (10, 50))
 
     ground.draw(window)
 
@@ -172,6 +180,10 @@ def draw_window(window, birds, pipes, ground, score):
 
 
 def main(genomes, config):
+    global generation
+    generation += 1
+    numberOfBirds = 10
+
     nets = []
     ge = []
     birds = []
@@ -225,6 +237,7 @@ def main(genomes, config):
                     birds.pop()
                     nets.pop()
                     ge.pop()
+                    numberOfBirds -= 1
 
                 if not pipe.passed and pipe.x < bird.x:
                     pipe.passed = True
@@ -249,9 +262,10 @@ def main(genomes, config):
                 birds.pop(x)
                 nets.pop(x)
                 ge.pop(x)
+                numberOfBirds -= 1
 
         ground.move()
-        draw_window(window, birds, pipes, ground, score)
+        draw_window(window, birds, pipes, ground, score, generation, numberOfBirds)
 
 
 def run(configPath):
