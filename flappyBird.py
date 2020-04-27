@@ -169,8 +169,19 @@ def draw_window(window, bird, pipes, ground, score):
     pygame.display.update()
 
 
-def main():
-    bird = Bird(230, 350)
+def main(genomes, config):
+    nets = []
+    ge = []
+    birds = []
+
+    for genome in genomes:
+        net = neat.nn.FeedForwordNetwork(genome, config)
+        nets.append(net)
+        birds.append(Bird(230, 350))
+        genome.fitness = 0
+        ge.append(genome)
+
+
     ground = Ground(730)
     pipes = [Pipe(600)]
     window = pygame.display.set_mode((windowWidth, windowHeight))
@@ -185,31 +196,39 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
 
-        #bird.move()
-        add_pipe = False
+        addPipe = False
         remove = []
         for pipe in pipes:
-            if pipe.collid(bird):
-                pass
+            for x, bird in enumerate(birds):
+                if pipe.collid(bird):
+                    ge[x].fitness -= 1
+                    birds.pop(x)
+                    nets.pop(x)
+                    ge.pop(x)
+
+                if not pipe.passed and pipe.x < bird.x:
+                    pipe.passed = True
+                    addPipe = True
 
             if pipe.x + pipe.pipeTop.get_width() < 0:
                 remove.append(pipe)
 
-            if not pipe.passed and pipe.x < bird.x:
-                pipe.passed = True
-                add_pipe = True
-
             pipe.move()
 
-        if add_pipe:
+        if addPipe:
             score += 1
+            for genome in ge:
+                genome.fitness += 5
             pipes.append(Pipe(600))
 
         for rem in remove:
             pipes.remove(rem)
 
-        if bird.y + bird.image.get_height() >= 730:
-            pass
+        for x, bird in enumerate(birds):
+            if bird.y + bird.image.get_height() >= 730:
+                birds.pop(x)
+                nets.pop(x)
+                ge.pop(x)
 
         ground.move()
         draw_window(window, bird, pipes, ground, score)
@@ -219,3 +238,22 @@ def main():
 
 
 main()
+
+
+def run(configPath):
+    config = neat.config.Config(neat.DefaultGenome, neat.DefaultReproduction, neat.DefaultSpeciesSet, neat.DefaultStagnation, configPath)
+
+    population = neat.Population(config)
+
+    population.add_reporter(neat.StdOutReporter(True))
+    stats = neat.StatisticsReporter()
+    population.add_reporter(stats)
+
+    winner = population.run(main, 50)
+
+
+if __name__ == "__main__":
+    local_dir = os.path.dirname(__file__)
+    configPath = os.path.join(local_dir, "config-feedforward.txt")
+    run(configPath)
+
