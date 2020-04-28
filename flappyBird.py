@@ -182,7 +182,7 @@ def draw_window(window, birds, pipes, ground, score, generation, numberOfBirds):
 def main(genomes, config):
     global generation
     generation += 1
-    numberOfBirds = 10
+    numberOfBirds = 15
 
     nets = []
     ge = []
@@ -223,7 +223,7 @@ def main(genomes, config):
             bird.move()
             ge[x].fitness += 0.1
 
-            output = nets[x].activate((bird.y, abs(bird.y - pipes[pipeIndex].height), abs(bird.y - pipes[pipeIndex].bottom)))
+            output = nets[birds.index(bird)].activate((bird.y, abs(bird.y - pipes[pipeIndex].height), abs(bird.y - pipes[pipeIndex].bottom)))
 
             if output[0] > 0.5:
                 bird.jump()
